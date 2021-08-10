@@ -1,9 +1,10 @@
 
-const int rxPin = 2;
+const int rxPin = 8;
 unsigned long data;
 
 void setup() {
   pinMode(rxPin, INPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
 
   Serial.begin(9600);
 
@@ -23,6 +24,7 @@ void setup() {
 
 // Waits for a leading edge of the next bit.  Returns 0 on timeout.
 int wait_on() {
+  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
   unsigned long start = micros();
   // Wait until we recive a low.
   while(digitalRead(rxPin)) {
@@ -32,6 +34,7 @@ int wait_on() {
   while(!digitalRead(rxPin)) {
     if (micros() - start > 5000) return 0;
   }
+  digitalWrite(LED_BUILTIN, LOW);   // turn the LED on (HIGH is the voltage level)
   return 1;
 }
 
@@ -60,7 +63,11 @@ void displayOutput(unsigned long data) {
  * Returns the bit number (zero based) that was received.
  */
 int rxbit(unsigned long time_us) {
-  int subbit = (time_us + 4500) / 1000;
+  Serial.print("rxbit at: ");
+  Serial.println(time_us);
+  long subbit = (time_us + 4500) / 1000;
+  Serial.print("subbit: ");
+  Serial.println(subbit);
   int bit = subbit / 6;
   if (1 != subbit % 3) {
     return -1;  // on is too early or late by 1ms.
@@ -105,17 +112,28 @@ void runtest(unsigned long time_us, int bitnum, int value) {
 
 void loop() {
   while (!wait5ms_off()) {};  // Ensure radio silence between transmissions.
+  Serial.println("silence.");
   while (!wait_on()) {};  // Get start bit.
 
   unsigned long start_time = micros();
-  int bits = 1;  // Already received first bit
-  data = 1;  // First bit was true.
+  int bits = 0;  // Already received first bit
+  data = 0;  // First bit was true.
 
   while (bits < 24) {
-    if (bits != rxbit(micros() - start_time)) {
+    int got = rxbit(micros() - start_time);
+    if (bits != got) {
+      Serial.print("Bits received at wrong time, want: ");
+      Serial.print(bits);
+      Serial.print(", got: ");
+      Serial.print(got);
+      Serial.println(".\n");
       return;  // bits received at wrong time.
     }
     if (!wait_on()) {
+      Serial.print("Timeout for bit: ");
+      Serial.print(bits);
+      Serial.print(" at: ");
+      Serial.println(micros() - start_time + 4000);
       return;  // timeout on next bit
     }
     bits++;
