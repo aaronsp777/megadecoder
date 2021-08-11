@@ -6,7 +6,7 @@ void setup() {
   pinMode(rxPin, INPUT);
   pinMode(LED_BUILTIN, OUTPUT);
 
-  Serial.begin(9600);
+  Serial.begin(115200);
 
 //  Serial.println("\nRunning Tests\n");
 //  runtest( 6900L - 4000L, 1, 0);
@@ -24,24 +24,27 @@ void setup() {
 
 // Waits for a leading edge of the next bit.  Returns 0 on timeout.
 int wait_on() {
-  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
   unsigned long start = micros();
+
+  // Delay 1.2ms
+  while(micros() - start < 1200) {};
+
   // Wait until we recive a low.
   while(digitalRead(rxPin)) {
-    if (micros() - start > 5000) return 0;
+    if (micros() - start > 1500) return 0;
   }
   // Wait until we recive a high.
+  start = micros();
   while(!digitalRead(rxPin)) {
-    if (micros() - start > 5000) return 0;
+    if (micros() - start > 9000) return 0;
   }
-  digitalWrite(LED_BUILTIN, LOW);   // turn the LED on (HIGH is the voltage level)
   return 1;
 }
 
 // Waits for 5ms ensuring signal stays off.  Returns 1 if we saw silence the whole time.
 int wait5ms_off() {
   unsigned long start = micros();
-  while(micros() - start < 5000) {
+  while(micros() - start < 10000) {
     if (digitalRead(rxPin)) {
       return 0;
     }
@@ -63,11 +66,7 @@ void displayOutput(unsigned long data) {
  * Returns the bit number (zero based) that was received.
  */
 int rxbit(unsigned long time_us) {
-  Serial.print("rxbit at: ");
-  Serial.println(time_us);
   long subbit = (time_us + 4500) / 1000;
-  Serial.print("subbit: ");
-  Serial.println(subbit);
   int bit = subbit / 6;
   if (1 != subbit % 3) {
     return -1;  // on is too early or late by 1ms.
@@ -131,7 +130,7 @@ void loop() {
     }
     if (!wait_on()) {
       Serial.print("Timeout for bit: ");
-      Serial.print(bits);
+      Serial.print(bits+1);
       Serial.print(" at: ");
       Serial.println(micros() - start_time + 4000);
       return;  // timeout on next bit
