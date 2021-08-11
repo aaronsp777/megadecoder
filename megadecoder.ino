@@ -1,55 +1,20 @@
 
 const int rxPin = 8;
-unsigned long data;
 
 void setup() {
   pinMode(rxPin, INPUT);
-  pinMode(LED_BUILTIN, OUTPUT);
-
   Serial.begin(115200);
-
-//  Serial.println("\nRunning Tests\n");
-//  runtest( 6900L - 4000L, 1, 0);
-//  runtest( 7000L - 4000L, 1, 0);
-//  runtest( 7100L - 4000L, 1, 0);
-//  runtest( 9900L - 4000L, 1, 1);
-//  runtest(10000L - 4000L, 1, 1);
-//  runtest(10100L - 4000L, 1, 1);
-//  runtest(13000L - 4000L, 2, 0);
-//  runtest(16000L - 4000L, 2, 1);
-
   Serial.println("Ready to receive...");
-
 }
 
-// Waits for a leading edge of the next bit.  Returns 0 on timeout.
-int wait_on() {
+bool wait_off(unsigned long delay) {
   unsigned long start = micros();
-
-  // Delay 1.2ms
-  while(micros() - start < 1200) {};
-
-  // Wait until we recive a low.
-  while(digitalRead(rxPin)) {
-    if (micros() - start > 1500) return 0;
-  }
-  // Wait until we recive a high.
-  start = micros();
-  while(!digitalRead(rxPin)) {
-    if (micros() - start > 9000) return 0;
-  }
-  return 1;
-}
-
-// Waits for 5ms ensuring signal stays off.  Returns 1 if we saw silence the whole time.
-int wait5ms_off() {
-  unsigned long start = micros();
-  while(micros() - start < 10000) {
+  while(micros() - start < delay) {
     if (digitalRead(rxPin)) {
-      return 0;
+      return false;
     }
   }
-  return 1;
+  return true;
 }
 
 void displayOutput(unsigned long data) {
@@ -60,82 +25,83 @@ void displayOutput(unsigned long data) {
   Serial.println(")");
 }
 
-/*
- * Based on the time difference between leading edge of current bit and start bit,
- * Determines which bitnumber this should be and directly updates the data register.
- * Returns the bit number (zero based) that was received.
- */
-int rxbit(unsigned long time_us) {
-  long subbit = (time_us + 4500) / 1000;
-  int bit = subbit / 6;
-  if (1 != subbit % 3) {
-    return -1;  // on is too early or late by 1ms.
-  }
-  if (bit > 23) {
-    return -1;  // received later than 24 bits
-  }
-  data<<=1;  // shift data register.
-  if (3 <= subbit %6) {
-    data|=1;  // received bit value of true.
-  }
-  return bit;
-}
+// Returns 0
+// Returns the time the bit was received.
+// Or 0 for timeout or other framing issue.
+// A zero start time means we are waiting for the first bit.
+unsigned long time_next_bit(unsigned long start_time) {
 
-void runtest(unsigned long time_us, int bitnum, int value) {
-  Serial.print("test rxbit(");
-  Serial.print(time_us);
-  Serial.print(")\t");
+  if (start_time == 0) {
+    // Receiving first bit.
+    // Ensure radio silence between transmissions.
+    while (wait_off(8500)) {};  // 8.5uS
+    Serial.println("silence.");
 
-  data = 0;
-  int got = rxbit(time_us);
-
-  if (bitnum != got ) {
-    Serial.print("want bit: ");
-    Serial.print(bitnum);
-    Serial.print(", got bit: ");
-    Serial.print(got);
-    Serial.println(". [FAILED]");
-    return;
+    while (!digitalRead(rxPin)) {}; // Wait without Deadline
+    unsigned long now = micros();
+    delayMicroseconds(1200);  // Wait for bit to pass.
+    if (digitalRead(rxPin)) {
+      Serial.println("first bit: overrun.");
+      return 0;  // Still receiving a signal after 1.2ms.
+    }
+    return now;
   }
 
-  if (bitnum >=0 && value != data) {
-    Serial.print("want value: ");
-    Serial.print(value);
-    Serial.print(", got value: ");
-    Serial.print(data);
-    Serial.println(". [FAILED]");
+  long delay = start_time - micros();
+  if (delay > 0) {
+    delayMicroseconds(delay);
   }
 
-  Serial.println("[PASS]");
+  // Receiving a followup bit.
+  while(!digitalRead(rxPin)) {
+    delay = micros() - start_time;
+    if (delay > 4500) {
+      Serial.println("followup bit: timeout");
+      break;  // Timeout.
+    }
+  }
+
+  unsigned long now = micros();
+  delayMicroseconds(1200);  // Wait for bit to pass.
+  if (digitalRead(rxPin)) {
+    Serial.println("followup bit: overrun.");
+    return 0;  // Still receiving a signal after 1.2ms.
+  }
+  return now;
 }
 
 void loop() {
-  while (!wait5ms_off()) {};  // Ensure radio silence between transmissions.
-  Serial.println("silence.");
-  while (!wait_on()) {};  // Get start bit.
+  unsigned long start_time = 0;
 
-  unsigned long start_time = micros();
-  int bits = 0;  // Already received first bit
-  data = 0;  // First bit was true.
+  start_time = time_next_bit(0);
+  start_time += 2000;
+  unsigned long data = 1;
+  int bits = 1;
 
-  while (bits < 24) {
-    int got = rxbit(micros() - start_time);
-    if (bits != got) {
-      Serial.print("Bits received at wrong time, want: ");
-      Serial.print(bits);
-      Serial.print(", got: ");
-      Serial.print(got);
-      Serial.println(".\n");
-      return;  // bits received at wrong time.
+  while (bits++ < 24) {
+    unsigned long next_start = time_next_bit(start_time);
+    long delay = next_start - start_time;
+
+    if (500 < delay && delay < 1500) {
+      start_time = next_start + 5000;
+      data<<=1;  // Push bit value 0.
+      continue;
     }
-    if (!wait_on()) {
-      Serial.print("Timeout for bit: ");
-      Serial.print(bits+1);
-      Serial.print(" at: ");
-      Serial.println(micros() - start_time + 4000);
-      return;  // timeout on next bit
+
+    if (3500 < delay && delay < 4500) {
+      start_time = next_start + 2000;
+      data<<=1;
+      data|=1;  // Push bit value 1.
+      continue;
     }
-    bits++;
+
+    // Else failure.
+    Serial.print("Bit ");
+    Serial.print(bits);
+    Serial.print(" received at ");
+    Serial.print(delay);
+    Serial.println(" microseconds.");
+    return;
   }
 
   displayOutput(data);
