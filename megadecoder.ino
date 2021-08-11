@@ -25,17 +25,15 @@ void displayOutput(unsigned long data) {
   Serial.println(")");
 }
 
-// Returns 0
 // Returns the time the bit was received.
 // Or 0 for timeout or other framing issue.
-// A zero start time means we are waiting for the first bit.
+// A zero start time of 0 means we are waiting for the first bit.
 unsigned long time_next_bit(unsigned long start_time) {
 
   if (start_time == 0) {
     // Receiving first bit.
     // Ensure radio silence between transmissions.
     while (wait_off(8500)) {};  // 8.5uS
-    Serial.println("silence.");
 
     while (!digitalRead(rxPin)) {}; // Wait without Deadline
     unsigned long now = micros();
