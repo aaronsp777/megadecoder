@@ -14,7 +14,7 @@ Since each bit contains a pulse, the protocol is self clocking since the time ca
 
 The 24 bits are always the same very time the remote is pressed.  There does not appear to be any [Rolling Code](https://en.wikipedia.org/wiki/Rolling_code) support in this protocol. 
 
-[link to cookoo vudo]  His work typically records the 24 bits as 6 hex digits.  So my code also shows this for completeness.
+[Preivous work here](https://git.cuvoodoo.info/megacode/about/) typically records the 24 bits as 6 hex digits.  So my code also shows this for completeness.
 
 ## Decoding the bits
 
