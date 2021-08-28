@@ -20,6 +20,8 @@ The 24 bits does not change.  The code is always the same every time the remote 
 
 The first bit (the start bit) is always a binary 1, followed by a 4-bit __Facility Code__, a unique 16-bit __Unique Remote Code__, and a 3-bit __Button Code__.
 
+![24 Bits](images/24_bits.png)
+
 ## Facility Codes, Remote Codes, and Button Codes
 
 ### Facility Codes
