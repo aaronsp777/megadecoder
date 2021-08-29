@@ -12,3 +12,7 @@ Decoder for Linear Megacode Remotes
 * Attach 5V & Ground.
 * Attaching a short coiled wire antenna will help reception.
 * Program your adruino and view the console at 115200 Baud.
+
+You can find the aruino code under [megadecoder.ino](megadecoder.ino).
+
+For those curious one can find more information about the [Transmission Protocol](Protocol.md)
