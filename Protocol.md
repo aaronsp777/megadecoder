@@ -73,6 +73,7 @@ different relays by system policy.
 * [ACT-34B Remote Manual](https://www.nortekcontrol.com/wp-content/uploads/ACT-31B_ACT-34B.pdf)
 * [ACT-34B FCC Report](https://fcc.report/FCC-ID/EF4ACP00872)
 * [AE-500 Installation Instructions](https://www.nortekcontrol.com/wp-content/uploads/AE-500.pdf)
+* [Talk: MegaCode to facility gates](https://fahrplan.events.ccc.de/congress/2014/Fahrplan/events/6462.html)
+* [Talk Slides: MegaCode to facility gates](https://fahrplan.events.ccc.de/congress/2014/Fahrplan/system/attachments/2545/original/slides.pdf)
 * [Megacode Gate Radio Control Receiver Reverse Engineering](https://www.cuvoodoo.info/cuvoodoo-005-megacode-gate-radio-control-receiver-reverse-engineering/)
-* [CCC lecture: MegaCode to facility gates](https://fahrplan.events.ccc.de/congress/2014/Fahrplan/events/6462.html)
 * [CuVoodoo Wiki](https://wiki.cuvoodoo.info/doku.php?id=megacode)
