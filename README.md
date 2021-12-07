@@ -15,4 +15,9 @@ Decoder for Linear Megacode Remotes
 
 You can find the code to program in [megadecoder.ino](megadecoder.ino).
 
+# The Protocol
 For those curious one can find more information about the [Transmission Protocol](Protocol.md).
+
+# Alternatives to Arduino
+* [Transmitting using a Raspberry Pi](Transmitting.md)
+* [Receiving using RTL_433](https://github.com/merbanan/rtl_433) on Windows, Linux (including a Raspberry Pi)
